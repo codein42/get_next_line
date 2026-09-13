@@ -1,0 +1,86 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   get_next_line_utils_bonus.c                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: hshrivas <hshrivas@student.42wolfsburg.de> +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/09/12 20:23:55 by hshrivas          #+#    #+#             */
+/*   Updated: 2026/09/12 20:23:56 by hshrivas         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "get_next_line_bonus.h"
+
+static void	copy_data(char *dst, char *src, size_t len)
+{
+	size_t	i;
+
+	i = 0;
+	while (i < len)
+	{
+		dst[i] = src[i];
+		i++;
+	}
+}
+
+t_stash	*stash_new(int fd)
+{
+	t_stash	*stash;
+
+	stash = malloc(sizeof(t_stash));
+	if (!stash)
+		return (NULL);
+	stash->data = malloc(2);
+	if (!stash->data)
+	{
+		free(stash);
+		return (NULL);
+	}
+	stash->fd = fd;
+	stash->len = 0;
+	stash->capacity = 2;
+	stash->has_nl = 0;
+	stash->next = NULL;
+	stash->data[0] = '\0';
+	return (stash);
+}
+
+int	stash_append(t_stash *stash, char *buf, size_t bytes)
+{
+	char	*new_data;
+	size_t	new_cap;
+	size_t	i;
+
+	new_cap = stash->capacity;
+	while (new_cap < stash->len + bytes + 1)
+		new_cap *= 2;
+	if (new_cap != stash->capacity)
+	{
+		new_data = malloc(new_cap);
+		if (!new_data)
+			return (0);
+		copy_data(new_data, stash->data, stash->len);
+		free(stash->data);
+		stash->data = new_data;
+		stash->capacity = new_cap;
+	}
+	i = 0;
+	while (i < bytes)
+	{
+		stash->data[stash->len++] = buf[i];
+		stash->has_nl |= (buf[i++] == '\n');
+	}
+	stash->data[stash->len] = '\0';
+	return (1);
+}
+
+void	*free_stash(t_stash *stash)
+{
+	if (stash)
+	{
+		free(stash->data);
+		free(stash);
+	}
+	return (NULL);
+}
